@@ -2,23 +2,25 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flores Amarillas Para Ti 🌻✨</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Galaxia de Flores Amarillas 🌻✨</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
         }
 
         body {
-            background-color: #05040a;
+            background-color: #030208;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             font-family: 'Georgia', serif;
+            touch-action: none;
         }
 
         canvas {
@@ -30,24 +32,30 @@
 
         .mensaje-centro {
             position: absolute;
-            top: 32%;
+            top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
             color: #ffffff;
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
-            text-shadow: 0 0 10px #ffea00, 0 0 20px #ffae00;
+            text-shadow: 0 0 12px #ffea00, 0 0 25px #ffae00, 0 0 40px #ffea00;
             pointer-events: none;
             text-align: center;
+            animation: palpitarTexto 1.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes palpitarTexto {
+            0% { transform: translate(-50%, -50%) scale(1); text-shadow: 0 0 10px #ffea00, 0 0 20px #ffae00; }
+            100% { transform: translate(-50%, -50%) scale(1.08); text-shadow: 0 0 20px #ffea00, 0 0 35px #ffae00, 0 0 50px #ffffff; }
         }
 
         .etiqueta-flotante {
             position: absolute;
             color: #ffffff;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: bold;
-            text-shadow: 0 0 5px #000, 0 0 10px #ffea00;
+            text-shadow: 0 0 6px #000, 0 0 12px #ffea00;
             z-index: 10;
             pointer-events: none;
             white-space: nowrap;
@@ -57,13 +65,13 @@
 
         @keyframes flotar {
             0% { transform: translate(-50%, -50%) translateY(0px); }
-            100% { transform: translate(-50%, -50%) translateY(-8px); }
+            100% { transform: translate(-50%, -50%) translateY(-10px); }
         }
     </style>
 </head>
 <body>
 
-    <div class="mensaje-centro">Te amo 💛</div>
+    <div class="mensaje-centro" id="textoCentro">Te amo 💛</div>
     <canvas id="canvasGalaxia"></canvas>
 
     <script>
@@ -73,6 +81,55 @@
         let ancho = canvas.width = window.innerWidth;
         let alto = canvas.height = window.innerHeight;
 
+        // Variables para el movimiento interactivo con mouse/touch
+        let offsetX = 0;
+        let offsetY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        let estaPresionando = false;
+        let startX = 0, startY = 0;
+
+        // Detectar movimiento en PC y Celular
+        window.addEventListener("mousemove", (e) => {
+            if (!estaPresionando) {
+                targetX = (e.clientX - ancho / 2) * 0.12;
+                targetY = (e.clientY - alto / 2) * 0.12;
+            } else {
+                targetX += (e.clientX - startX) * 0.8;
+                targetY += (e.clientY - startY) * 0.8;
+                startX = e.clientX;
+                startY = e.clientY;
+            }
+        });
+
+        window.addEventListener("mousedown", (e) => {
+            estaPresionando = true;
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+
+        window.addEventListener("mouseup", () => estaPresionando = false);
+
+        // Eventos para Celular (Touch)
+        window.addEventListener("touchstart", (e) => {
+            if (e.touches.length === 1) {
+                estaPresionando = true;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+        });
+
+        window.addEventListener("touchmove", (e) => {
+            if (estaPresionando && e.touches.length === 1) {
+                targetX += (e.touches[0].clientX - startX) * 0.8;
+                targetY += (e.touches[0].clientY - startY) * 0.8;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+        });
+
+        window.addEventListener("touchend", () => estaPresionando = false);
+
         window.addEventListener("resize", () => {
             ancho = canvas.width = window.innerWidth;
             alto = canvas.height = window.innerHeight;
@@ -80,10 +137,10 @@
         });
 
         // 1. Estrellas de fondo
-        const estrellas = Array.from({ length: 300 }, () => ({
+        const estrellas = Array.from({ length: 400 }, () => ({
             x: Math.random() * ancho,
             y: Math.random() * alto,
-            radio: Math.random() * 1.5,
+            radio: Math.random() * 1.8,
             alpha: Math.random(),
             vAlpha: (Math.random() - 0.5) * 0.02
         }));
@@ -92,54 +149,53 @@
         let particulasCorazon = [];
         function crearCorazon() {
             particulasCorazon = [];
-            const centroX = ancho / 2;
-            const centroY = alto * 0.32;
-            const escala = Math.min(ancho, alto) / 55;
+            const escala = Math.min(ancho, alto) / 52;
 
-            for (let i = 0; i < 450; i++) {
+            for (let i = 0; i < 600; i++) {
                 const t = Math.random() * Math.PI * 2;
                 const x = 16 * Math.pow(Math.sin(t), 3);
                 const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
                 
                 particulasCorazon.push({
-                    x: centroX + x * escala + (Math.random() - 0.5) * 12,
-                    y: centroY + y * escala + (Math.random() - 0.5) * 12,
-                    radio: Math.random() * 2 + 0.5,
-                    alpha: Math.random() * 0.8 + 0.2
+                    baseX: x * escala,
+                    baseY: y * escala,
+                    radio: Math.random() * 2.2 + 0.6,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    vAlpha: Math.random() * 0.02 + 0.01,
+                    color: ["#ffea00", "#ffd700", "#fff59d", "#ffffff"][Math.floor(Math.random() * 4)]
                 });
             }
         }
         crearCorazon();
 
-        // 3. Galaxia Espiral Central
-        const particulasGalaxia = Array.from({ length: 600 }, () => {
-            const angulo = Math.random() * Math.PI * 6;
-            const dist = 6 * angulo + (Math.random() - 0.5) * 20;
+        // 3. Galaxia Espiral Central (Puntitos Amarillos y Polvo Estelar)
+        const particulasGalaxia = Array.from({ length: 1100 }, () => {
+            const angulo = Math.random() * Math.PI * 8;
+            const dist = 5.5 * angulo + (Math.random() - 0.5) * 28;
             return {
                 angulo: angulo,
                 distancia: dist,
-                radio: Math.random() * 2 + 1,
-                color: ["#ffea00", "#ffd700", "#ffffff", "#ffae00"][Math.floor(Math.random() * 4)]
+                radio: Math.random() * 2.5 + 0.8,
+                color: ["#ffea00", "#ffd700", "#ffffff", "#ffae00", "#fff176"][Math.floor(Math.random() * 5)],
+                alpha: Math.random() * 0.9 + 0.1
             };
         });
 
         // 4. Dibujar Flores y Ramos
-        function dibujarFlor(cx, cy, tam, petalos = 10) {
+        function dibujarFlor(cx, cy, tam, petalos = 12) {
             ctx.save();
             ctx.translate(cx, cy);
 
-            // Pétalos
             ctx.fillStyle = "#ffea00";
             for (let i = 0; i < petalos; i++) {
                 const ang = (i * Math.PI * 2) / petalos;
                 ctx.beginPath();
                 ctx.rotate(ang);
-                ctx.ellipse(tam * 1.2, 0, tam * 1.1, tam * 0.4, 0, 0, Math.PI * 2);
+                ctx.ellipse(tam * 1.3, 0, tam * 1.1, tam * 0.4, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.rotate(-ang);
             }
 
-            // Centro
             ctx.fillStyle = "#5c3d11";
             ctx.beginPath();
             ctx.arc(0, 0, tam * 0.7, 0, Math.PI * 2);
@@ -152,7 +208,6 @@
             ctx.save();
             ctx.translate(x, y);
 
-            // Papel de envoltura
             ctx.fillStyle = "#e0c097";
             ctx.beginPath();
             ctx.moveTo(0, 45 * escala);
@@ -161,18 +216,15 @@
             ctx.closePath();
             ctx.fill();
 
-            // Cinta rosa
             ctx.fillStyle = "#f48fb1";
             ctx.fillRect(-10 * escala, 20 * escala, 20 * escala, 8 * escala);
 
-            // Hojas
             ctx.fillStyle = "#4caf50";
             ctx.beginPath();
             ctx.arc(-15 * escala, -5 * escala, 10 * escala, 0, Math.PI * 2);
             ctx.arc(15 * escala, -5 * escala, 10 * escala, 0, Math.PI * 2);
             ctx.fill();
 
-            // Flores arriba
             dibujarFlor(-12 * escala, -12 * escala, 12 * escala);
             dibujarFlor(12 * escala, -12 * escala, 12 * escala);
             dibujarFlor(0, -22 * escala, 14 * escala);
@@ -180,79 +232,118 @@
             ctx.restore();
         }
 
-        // Elementos interactivos
-        const frases = [
-            { texto: "Te adoro 💛", x: 0.22, y: 0.32, tipo: "ramo", esc: 1.1 },
-            { texto: "Te Amo ✨", x: 0.78, y: 0.32, tipo: "ramo", esc: 1.1 },
-            { texto: "Eres mi sol 🌻", x: 0.15, y: 0.55, tipo: "ramo", esc: 1.0 },
-            { texto: "Eres mi todo 💖", x: 0.85, y: 0.55, tipo: "ramo", esc: 1.0 },
-            { texto: "Siempre juntos 💛", x: 0.50, y: 0.78, tipo: "ramo", esc: 1.2 },
-            { texto: "Amor de mi vida", x: 0.35, y: 0.42, tipo: "flor", esc: 10 },
-            { texto: "Eres preciosa", x: 0.65, y: 0.42, tipo: "flor", esc: 10 },
-            { texto: "Eres única 🌟", x: 0.30, y: 0.68, tipo: "flor", esc: 10 }
+        const elementos = [
+            { texto: "Te adoro 💛", x: 0.22, y: 0.30, tipo: "ramo", esc: 1.1, elDOM: null },
+            { texto: "Te Amo ✨", x: 0.78, y: 0.30, tipo: "ramo", esc: 1.1, elDOM: null },
+            { texto: "Eres mi sol 🌻", x: 0.15, y: 0.55, tipo: "ramo", esc: 1.0, elDOM: null },
+            { texto: "Eres mi todo 💖", x: 0.85, y: 0.55, tipo: "ramo", esc: 1.0, elDOM: null },
+            { texto: "Siempre juntos 💛", x: 0.50, y: 0.80, tipo: "ramo", esc: 1.2, elDOM: null },
+            { texto: "Amor de mi vida", x: 0.35, y: 0.42, tipo: "flor", esc: 10, elDOM: null },
+            { texto: "Eres preciosa", x: 0.65, y: 0.42, tipo: "flor", esc: 10, elDOM: null },
+            { texto: "Eres única 🌟", x: 0.30, y: 0.68, tipo: "flor", esc: 10, elDOM: null }
         ];
 
-        // Crear etiquetas en el DOM
-        frases.forEach(item => {
-            if(item.texto) {
+        // Crear elementos flotantes en el DOM
+        elementos.forEach(item => {
+            if (item.texto) {
                 const el = document.createElement("div");
                 el.className = "etiqueta-flotante";
                 el.innerText = item.texto;
-                el.style.left = `${item.x * 100}%`;
-                el.style.top = `${(item.y + 0.06) * 100}%`;
                 document.body.appendChild(el);
+                item.elDOM = el;
             }
         });
 
         // Bucle de Animación
         let rotacionGalaxia = 0;
+        let tiempo = 0;
+
         function animar() {
-            ctx.fillStyle = "rgba(5, 4, 10, 0.3)";
+            tiempo += 0.03;
+            rotacionGalaxia += 0.008;
+
+            // Interpolación suave del movimiento (Inercia)
+            offsetX += (targetX - offsetX) * 0.08;
+            offsetY += (targetY - offsetY) * 0.08;
+
+            ctx.fillStyle = "rgba(3, 2, 8, 0.35)";
             ctx.fillRect(0, 0, ancho, alto);
 
-            // A. Estrellas
+            // A. Estrellas de Fondo
             estrellas.forEach(e => {
                 e.alpha += e.vAlpha;
                 if (e.alpha <= 0.1 || e.alpha >= 1) e.vAlpha *= -1;
                 ctx.fillStyle = `rgba(255, 255, 255, ${e.alpha})`;
                 ctx.beginPath();
-                ctx.arc(e.x, e.y, e.radio, 0, Math.PI * 2);
+                ctx.arc(e.x + offsetX * 0.2, e.y + offsetY * 0.2, e.radio, 0, Math.PI * 2);
                 ctx.fill();
             });
 
-            // B. Corazón Dorado
+            // B. Corazón de Polvo Dorado Palpitante
+            const centroXCorazon = ancho / 2 + offsetX * 0.8;
+            const centroYCorazon = alto * 0.30 + offsetY * 0.8;
+            const escalaPalpitacion = 1 + Math.sin(tiempo * 3) * 0.08; // Efecto latido
+
             particulasCorazon.forEach(p => {
-                ctx.fillStyle = `rgba(255, 235, 59, ${p.alpha})`;
+                const px = centroXCorazon + p.baseX * escalaPalpitacion + Math.sin(tiempo + p.baseX) * 1.5;
+                const py = centroYCorazon + p.baseY * escalaPalpitacion + Math.cos(tiempo + p.baseY) * 1.5;
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
                 ctx.beginPath();
-                ctx.arc(p.x + (Math.random() - 0.5) * 2, p.y + (Math.random() - 0.5) * 2, p.radio, 0, Math.PI * 2);
+                ctx.arc(px, py, p.radio, 0, Math.PI * 2);
                 ctx.fill();
             });
+            ctx.globalAlpha = 1.0;
 
-            // C. Espiral Galáctico (Centro)
-            rotacionGalaxia += 0.008;
-            const gx = ancho / 2;
-            const gy = alto * 0.55;
+            // Mover el texto "Te amo" con el corazón
+            const txtCentro = document.getElementById("textoCentro");
+            txtCentro.style.left = `${centroXCorazon}px`;
+            txtCentro.style.top = `${centroYCorazon}px`;
 
+            // C. Esfera / Núcleo de Luz en el Centro de la Galaxia
+            const gx = ancho / 2 + offsetX;
+            const gy = alto * 0.55 + offsetY;
+
+            const gradienteCore = ctx.createRadialGradient(gx, gy, 5, gx, gy, 120);
+            gradienteCore.addColorStop(0, "rgba(255, 255, 255, 1)");
+            gradienteCore.addColorStop(0.2, "rgba(255, 234, 0, 0.9)");
+            gradienteCore.addColorStop(0.5, "rgba(255, 174, 0, 0.4)");
+            gradienteCore.addColorStop(1, "rgba(255, 215, 0, 0)");
+
+            ctx.fillStyle = gradienteCore;
+            ctx.beginPath();
+            ctx.arc(gx, gy, 120, 0, Math.PI * 2);
+            ctx.fill();
+
+            // D. Espiral Galáctico (Puntitos Amarillos)
             particulasGalaxia.forEach(p => {
                 const ang = p.angulo + rotacionGalaxia;
                 const px = gx + Math.cos(ang) * p.distancia * 1.8;
                 const py = gy + Math.sin(ang) * (p.distancia * 0.6);
 
                 ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
                 ctx.beginPath();
                 ctx.arc(px, py, p.radio, 0, Math.PI * 2);
                 ctx.fill();
             });
+            ctx.globalAlpha = 1.0;
 
-            // D. Ramos y Flores
-            frases.forEach(item => {
-                const posX = item.x * ancho;
-                const posY = item.y * alto;
+            // E. Ramos, Flores y Textos Interactivos
+            elementos.forEach(item => {
+                const posX = item.x * ancho + offsetX;
+                const posY = item.y * alto + offsetY;
 
                 if (item.tipo === "ramo") {
                     dibujarRamo(posX, posY, item.esc);
                 } else {
                     dibujarFlor(posX, posY, item.esc);
+                }
+
+                if (item.elDOM) {
+                    item.elDOM.style.left = `${posX}px`;
+                    item.elDOM.style.top = `${posY + 45}px`;
                 }
             });
 
