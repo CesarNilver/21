@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #030208;
+            background-color: #020105;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -84,7 +84,7 @@
         let ancho = canvas.width = window.innerWidth;
         let alto = canvas.height = window.innerHeight;
 
-        // Variables para arrastrar la galaxia libremente
+        // Variables para mover solo la galaxia y las flores
         let offsetX = 0, offsetY = 0;
         let isDragging = false;
         let previousMouseX = 0, previousMouseY = 0;
@@ -98,10 +98,8 @@
 
         window.addEventListener("mousemove", (e) => {
             if (isDragging) {
-                const deltaX = e.clientX - previousMouseX;
-                const deltaY = e.clientY - previousMouseY;
-                offsetX += deltaX;
-                offsetY += deltaY;
+                offsetX += e.clientX - previousMouseX;
+                offsetY += e.clientY - previousMouseY;
                 previousMouseX = e.clientX;
                 previousMouseY = e.clientY;
             }
@@ -120,10 +118,8 @@
 
         window.addEventListener("touchmove", (e) => {
             if (isDragging && e.touches.length === 1) {
-                const deltaX = e.touches[0].clientX - previousMouseX;
-                const deltaY = e.touches[0].clientY - previousMouseY;
-                offsetX += deltaX;
-                offsetY += deltaY;
+                offsetX += e.touches[0].clientX - previousMouseX;
+                offsetY += e.touches[0].clientY - previousMouseY;
                 previousMouseX = e.touches[0].clientX;
                 previousMouseY = e.touches[0].clientY;
             }
@@ -138,16 +134,17 @@
             crearEstrellas();
         });
 
-        // 1. Muchas más estrellas de fondo (800 Estrellas)
+        // 1. Cielo estelar denso e iluminado (1,500 Estrellas Fijas)
         let estrellas = [];
         function crearEstrellas() {
-            estrellas = Array.from({ length: 800 }, () => ({
-                x: Math.random() * (ancho * 2) - ancho / 2,
-                y: Math.random() * (alto * 2) - alto / 2,
-                radio: Math.random() * 2.0 + 0.3,
+            estrellas = Array.from({ length: 1500 }, () => ({
+                x: Math.random() * ancho,
+                y: Math.random() * alto,
+                radio: Math.random() * 2.2 + 0.2,
                 alpha: Math.random(),
-                vAlpha: (Math.random() - 0.5) * 0.03,
-                brillante: Math.random() > 0.85 // Algunas estrellas tienen destellos
+                vAlpha: (Math.random() - 0.5) * 0.025,
+                color: ["#ffffff", "#fffde7", "#fff59d", "#e0f7fa"][Math.floor(Math.random() * 4)],
+                brillante: Math.random() > 0.88
             }));
         }
         crearEstrellas();
@@ -174,7 +171,7 @@
         }
         crearCorazon();
 
-        // 3. Galaxia Espiral Central (Puntitos Amarillos y Polvo Estelar)
+        // 3. Galaxia Espiral Central
         const particulasGalaxia = Array.from({ length: 1200 }, () => {
             const angulo = Math.random() * Math.PI * 8;
             const dist = 5.5 * angulo + (Math.random() - 0.5) * 30;
@@ -267,34 +264,32 @@
             tiempo += 0.03;
             rotacionGalaxia += 0.008;
 
-            ctx.fillStyle = "rgba(3, 2, 8, 0.35)";
+            ctx.fillStyle = "rgba(2, 1, 5, 0.35)";
             ctx.fillRect(0, 0, ancho, alto);
 
-            // A. Estrellas de Fondo (Siguen suavemente el arrastre)
+            // A. Estrellas de Fondo (FIJAS, NO SE MOVERÁN)
             estrellas.forEach(e => {
                 e.alpha += e.vAlpha;
                 if (e.alpha <= 0.1 || e.alpha >= 1) e.vAlpha *= -1;
 
-                const ex = e.x + offsetX * 0.2;
-                const ey = e.y + offsetY * 0.2;
-
-                ctx.fillStyle = `rgba(255, 255, 255, ${e.alpha})`;
+                ctx.fillStyle = e.color;
+                ctx.globalAlpha = e.alpha;
                 ctx.beginPath();
-                ctx.arc(ex, ey, e.radio, 0, Math.PI * 2);
+                ctx.arc(e.x, e.y, e.radio, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Destello adicional para estrellas brillantes
                 if (e.brillante && e.alpha > 0.6) {
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${e.alpha * 0.5})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${e.alpha * 0.6})`;
+                    ctx.lineWidth = 0.6;
                     ctx.beginPath();
-                    ctx.moveTo(ex - 4, ey); ctx.lineTo(ex + 4, ey);
-                    ctx.moveTo(ex, ey - 4); ctx.lineTo(ex, ey + 4);
+                    ctx.moveTo(e.x - 5, e.y); ctx.lineTo(e.x + 5, e.y);
+                    ctx.moveTo(e.x, e.y - 5); ctx.lineTo(e.x, e.y + 5);
                     ctx.stroke();
                 }
             });
+            ctx.globalAlpha = 1.0;
 
-            // B. Corazón de Polvo Dorado Palpitante
+            // B. Corazón de Polvo Dorado (SE MUEVE CON EL ARRASTRE)
             const centroXCorazon = ancho / 2 + offsetX;
             const centroYCorazon = alto * 0.30 + offsetY;
             const escalaPalpitacion = 1 + Math.sin(tiempo * 3) * 0.08;
@@ -315,11 +310,11 @@
             txtCentro.style.left = `${centroXCorazon}px`;
             txtCentro.style.top = `${centroYCorazon}px`;
 
-            // C. Esfera de Luz Neón en el Centro de la Galaxia
+            // C. Esfera de Luz en el Centro de la Galaxia (SE MUEVE CON EL ARRASTRE)
             const gx = ancho / 2 + offsetX;
             const gy = alto * 0.55 + offsetY;
 
-            const gradienteCore = ctx.createRadialGradient(gx, gy, 5, gx, gy, 130);
+            const gradienteCore = ctx.createRadialGradient(gx, gy, 5, gx, gy, 140);
             gradienteCore.addColorStop(0, "rgba(255, 255, 255, 1)");
             gradienteCore.addColorStop(0.2, "rgba(255, 234, 0, 0.9)");
             gradienteCore.addColorStop(0.5, "rgba(255, 174, 0, 0.35)");
@@ -327,10 +322,10 @@
 
             ctx.fillStyle = gradienteCore;
             ctx.beginPath();
-            ctx.arc(gx, gy, 130, 0, Math.PI * 2);
+            ctx.arc(gx, gy, 140, 0, Math.PI * 2);
             ctx.fill();
 
-            // D. Espiral Galáctico (Puntitos Amarillos)
+            // D. Espiral Galáctico (SE MUEVE CON EL ARRASTRE)
             particulasGalaxia.forEach(p => {
                 const ang = p.angulo + rotacionGalaxia;
                 const px = gx + Math.cos(ang) * p.distancia * 1.8;
@@ -344,7 +339,7 @@
             });
             ctx.globalAlpha = 1.0;
 
-            // E. Ramos, Flores y Textos
+            // E. Ramos, Flores y Textos (SE MUEVEN CON EL ARRASTRE)
             elementos.forEach(item => {
                 const posX = item.x * ancho + offsetX;
                 const posY = item.y * alto + offsetY;
