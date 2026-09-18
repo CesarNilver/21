@@ -84,7 +84,7 @@
         let ancho = canvas.width = window.innerWidth;
         let alto = canvas.height = window.innerHeight;
 
-        // Variables para mover solo la galaxia y las flores
+        // Variables para mover SOLO la galaxia y las flores
         let offsetX = 0, offsetY = 0;
         let isDragging = false;
         let previousMouseX = 0, previousMouseY = 0;
@@ -134,7 +134,7 @@
             crearEstrellas();
         });
 
-        // 1. Cielo estelar denso e iluminado (1,500 Estrellas Fijas)
+        // 1. Fondo Estelar Fijo (1,500 Estrellas)
         let estrellas = [];
         function crearEstrellas() {
             estrellas = Array.from({ length: 1500 }, () => ({
@@ -184,7 +184,35 @@
             };
         });
 
-        // 4. Dibujar Flores y Ramos
+        // 4. Dibujar Espiral de Luz Alrededor de las Flores
+        function dibujarEspiral(cx, cy, radioMax, anguloRotacion) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.beginPath();
+            
+            const vueltas = 3;
+            const puntos = 80;
+            
+            for (let i = 0; i < puntos; i++) {
+                const t = (i / puntos) * (vueltas * Math.PI * 2);
+                const r = (t / (vueltas * Math.PI * 2)) * radioMax;
+                const ang = t + anguloRotacion;
+                const x = Math.cos(ang) * r;
+                const y = Math.sin(ang) * (r * 0.5); // Aplanado para aspecto 3D
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+
+            ctx.strokeStyle = "rgba(255, 234, 0, 0.65)";
+            ctx.lineWidth = 1.8;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ffea00";
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 5. Dibujar Flores y Ramos
         function dibujarFlor(cx, cy, tam, petalos = 12) {
             ctx.save();
             ctx.translate(cx, cy);
@@ -267,7 +295,7 @@
             ctx.fillStyle = "rgba(2, 1, 5, 0.35)";
             ctx.fillRect(0, 0, ancho, alto);
 
-            // A. Estrellas de Fondo (FIJAS, NO SE MOVERÁN)
+            // A. Estrellas de Fondo (Totalmente fijas)
             estrellas.forEach(e => {
                 e.alpha += e.vAlpha;
                 if (e.alpha <= 0.1 || e.alpha >= 1) e.vAlpha *= -1;
@@ -289,7 +317,7 @@
             });
             ctx.globalAlpha = 1.0;
 
-            // B. Corazón de Polvo Dorado (SE MUEVE CON EL ARRASTRE)
+            // B. Corazón Palpitante (Móvil)
             const centroXCorazon = ancho / 2 + offsetX;
             const centroYCorazon = alto * 0.30 + offsetY;
             const escalaPalpitacion = 1 + Math.sin(tiempo * 3) * 0.08;
@@ -310,7 +338,7 @@
             txtCentro.style.left = `${centroXCorazon}px`;
             txtCentro.style.top = `${centroYCorazon}px`;
 
-            // C. Esfera de Luz en el Centro de la Galaxia (SE MUEVE CON EL ARRASTRE)
+            // C. Centro Resplandeciente de la Galaxia (Móvil)
             const gx = ancho / 2 + offsetX;
             const gy = alto * 0.55 + offsetY;
 
@@ -325,7 +353,7 @@
             ctx.arc(gx, gy, 140, 0, Math.PI * 2);
             ctx.fill();
 
-            // D. Espiral Galáctico (SE MUEVE CON EL ARRASTRE)
+            // D. Espiral de la Galaxia (Móvil)
             particulasGalaxia.forEach(p => {
                 const ang = p.angulo + rotacionGalaxia;
                 const px = gx + Math.cos(ang) * p.distancia * 1.8;
@@ -339,10 +367,14 @@
             });
             ctx.globalAlpha = 1.0;
 
-            // E. Ramos, Flores y Textos (SE MUEVEN CON EL ARRASTRE)
+            // E. Flores, Ramos y sus Espirales de Luz (Móviles)
             elementos.forEach(item => {
                 const posX = item.x * ancho + offsetX;
                 const posY = item.y * alto + offsetY;
+
+                // Dibujar espiral orbitando alrededor de cada elemento
+                const radioEspiral = item.tipo === "ramo" ? 50 * item.esc : 35;
+                dibujarEspiral(posX, posY, radioEspiral, rotacionGalaxia * 2.5);
 
                 if (item.tipo === "ramo") {
                     dibujarRamo(posX, posY, item.esc);
