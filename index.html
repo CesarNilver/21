@@ -21,6 +21,11 @@
             height: 100vh;
             font-family: 'Georgia', serif;
             touch-action: none;
+            cursor: grab;
+        }
+
+        body:active {
+            cursor: grabbing;
         }
 
         canvas {
@@ -32,9 +37,6 @@
 
         .mensaje-centro {
             position: absolute;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             z-index: 10;
             color: #ffffff;
             font-size: 2.2rem;
@@ -42,6 +44,7 @@
             text-shadow: 0 0 12px #ffea00, 0 0 25px #ffae00, 0 0 40px #ffea00;
             pointer-events: none;
             text-align: center;
+            transform: translate(-50%, -50%);
             animation: palpitarTexto 1.8s ease-in-out infinite alternate;
         }
 
@@ -81,69 +84,73 @@
         let ancho = canvas.width = window.innerWidth;
         let alto = canvas.height = window.innerHeight;
 
-        // Variables para el movimiento interactivo con mouse/touch
-        let offsetX = 0;
-        let offsetY = 0;
-        let targetX = 0;
-        let targetY = 0;
-        let estaPresionando = false;
-        let startX = 0, startY = 0;
+        // Variables para arrastrar la galaxia libremente
+        let offsetX = 0, offsetY = 0;
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0;
 
-        // Detectar movimiento en PC y Celular
+        // Eventos para PC (Mouse)
+        window.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        });
+
         window.addEventListener("mousemove", (e) => {
-            if (!estaPresionando) {
-                targetX = (e.clientX - ancho / 2) * 0.12;
-                targetY = (e.clientY - alto / 2) * 0.12;
-            } else {
-                targetX += (e.clientX - startX) * 0.8;
-                targetY += (e.clientY - startY) * 0.8;
-                startX = e.clientX;
-                startY = e.clientY;
+            if (isDragging) {
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+                offsetX += deltaX;
+                offsetY += deltaY;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
             }
         });
 
-        window.addEventListener("mousedown", (e) => {
-            estaPresionando = true;
-            startX = e.clientX;
-            startY = e.clientY;
-        });
-
-        window.addEventListener("mouseup", () => estaPresionando = false);
+        window.addEventListener("mouseup", () => isDragging = false);
 
         // Eventos para Celular (Touch)
         window.addEventListener("touchstart", (e) => {
             if (e.touches.length === 1) {
-                estaPresionando = true;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
+                isDragging = true;
+                previousMouseX = e.touches[0].clientX;
+                previousMouseY = e.touches[0].clientY;
             }
         });
 
         window.addEventListener("touchmove", (e) => {
-            if (estaPresionando && e.touches.length === 1) {
-                targetX += (e.touches[0].clientX - startX) * 0.8;
-                targetY += (e.touches[0].clientY - startY) * 0.8;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
+            if (isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - previousMouseX;
+                const deltaY = e.touches[0].clientY - previousMouseY;
+                offsetX += deltaX;
+                offsetY += deltaY;
+                previousMouseX = e.touches[0].clientX;
+                previousMouseY = e.touches[0].clientY;
             }
         });
 
-        window.addEventListener("touchend", () => estaPresionando = false);
+        window.addEventListener("touchend", () => isDragging = false);
 
         window.addEventListener("resize", () => {
             ancho = canvas.width = window.innerWidth;
             alto = canvas.height = window.innerHeight;
             crearCorazon();
+            crearEstrellas();
         });
 
-        // 1. Estrellas de fondo
-        const estrellas = Array.from({ length: 400 }, () => ({
-            x: Math.random() * ancho,
-            y: Math.random() * alto,
-            radio: Math.random() * 1.8,
-            alpha: Math.random(),
-            vAlpha: (Math.random() - 0.5) * 0.02
-        }));
+        // 1. Muchas más estrellas de fondo (800 Estrellas)
+        let estrellas = [];
+        function crearEstrellas() {
+            estrellas = Array.from({ length: 800 }, () => ({
+                x: Math.random() * (ancho * 2) - ancho / 2,
+                y: Math.random() * (alto * 2) - alto / 2,
+                radio: Math.random() * 2.0 + 0.3,
+                alpha: Math.random(),
+                vAlpha: (Math.random() - 0.5) * 0.03,
+                brillante: Math.random() > 0.85 // Algunas estrellas tienen destellos
+            }));
+        }
+        crearEstrellas();
 
         // 2. Corazón de Polvo Dorado
         let particulasCorazon = [];
@@ -151,7 +158,7 @@
             particulasCorazon = [];
             const escala = Math.min(ancho, alto) / 52;
 
-            for (let i = 0; i < 600; i++) {
+            for (let i = 0; i < 650; i++) {
                 const t = Math.random() * Math.PI * 2;
                 const x = 16 * Math.pow(Math.sin(t), 3);
                 const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
@@ -161,7 +168,6 @@
                     baseY: y * escala,
                     radio: Math.random() * 2.2 + 0.6,
                     alpha: Math.random() * 0.8 + 0.2,
-                    vAlpha: Math.random() * 0.02 + 0.01,
                     color: ["#ffea00", "#ffd700", "#fff59d", "#ffffff"][Math.floor(Math.random() * 4)]
                 });
             }
@@ -169,9 +175,9 @@
         crearCorazon();
 
         // 3. Galaxia Espiral Central (Puntitos Amarillos y Polvo Estelar)
-        const particulasGalaxia = Array.from({ length: 1100 }, () => {
+        const particulasGalaxia = Array.from({ length: 1200 }, () => {
             const angulo = Math.random() * Math.PI * 8;
-            const dist = 5.5 * angulo + (Math.random() - 0.5) * 28;
+            const dist = 5.5 * angulo + (Math.random() - 0.5) * 30;
             return {
                 angulo: angulo,
                 distancia: dist,
@@ -243,7 +249,6 @@
             { texto: "Eres única 🌟", x: 0.30, y: 0.68, tipo: "flor", esc: 10, elDOM: null }
         ];
 
-        // Crear elementos flotantes en el DOM
         elementos.forEach(item => {
             if (item.texto) {
                 const el = document.createElement("div");
@@ -262,27 +267,37 @@
             tiempo += 0.03;
             rotacionGalaxia += 0.008;
 
-            // Interpolación suave del movimiento (Inercia)
-            offsetX += (targetX - offsetX) * 0.08;
-            offsetY += (targetY - offsetY) * 0.08;
-
             ctx.fillStyle = "rgba(3, 2, 8, 0.35)";
             ctx.fillRect(0, 0, ancho, alto);
 
-            // A. Estrellas de Fondo
+            // A. Estrellas de Fondo (Siguen suavemente el arrastre)
             estrellas.forEach(e => {
                 e.alpha += e.vAlpha;
                 if (e.alpha <= 0.1 || e.alpha >= 1) e.vAlpha *= -1;
+
+                const ex = e.x + offsetX * 0.2;
+                const ey = e.y + offsetY * 0.2;
+
                 ctx.fillStyle = `rgba(255, 255, 255, ${e.alpha})`;
                 ctx.beginPath();
-                ctx.arc(e.x + offsetX * 0.2, e.y + offsetY * 0.2, e.radio, 0, Math.PI * 2);
+                ctx.arc(ex, ey, e.radio, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Destello adicional para estrellas brillantes
+                if (e.brillante && e.alpha > 0.6) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${e.alpha * 0.5})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(ex - 4, ey); ctx.lineTo(ex + 4, ey);
+                    ctx.moveTo(ex, ey - 4); ctx.lineTo(ex, ey + 4);
+                    ctx.stroke();
+                }
             });
 
             // B. Corazón de Polvo Dorado Palpitante
-            const centroXCorazon = ancho / 2 + offsetX * 0.8;
-            const centroYCorazon = alto * 0.30 + offsetY * 0.8;
-            const escalaPalpitacion = 1 + Math.sin(tiempo * 3) * 0.08; // Efecto latido
+            const centroXCorazon = ancho / 2 + offsetX;
+            const centroYCorazon = alto * 0.30 + offsetY;
+            const escalaPalpitacion = 1 + Math.sin(tiempo * 3) * 0.08;
 
             particulasCorazon.forEach(p => {
                 const px = centroXCorazon + p.baseX * escalaPalpitacion + Math.sin(tiempo + p.baseX) * 1.5;
@@ -296,24 +311,23 @@
             });
             ctx.globalAlpha = 1.0;
 
-            // Mover el texto "Te amo" con el corazón
             const txtCentro = document.getElementById("textoCentro");
             txtCentro.style.left = `${centroXCorazon}px`;
             txtCentro.style.top = `${centroYCorazon}px`;
 
-            // C. Esfera / Núcleo de Luz en el Centro de la Galaxia
+            // C. Esfera de Luz Neón en el Centro de la Galaxia
             const gx = ancho / 2 + offsetX;
             const gy = alto * 0.55 + offsetY;
 
-            const gradienteCore = ctx.createRadialGradient(gx, gy, 5, gx, gy, 120);
+            const gradienteCore = ctx.createRadialGradient(gx, gy, 5, gx, gy, 130);
             gradienteCore.addColorStop(0, "rgba(255, 255, 255, 1)");
             gradienteCore.addColorStop(0.2, "rgba(255, 234, 0, 0.9)");
-            gradienteCore.addColorStop(0.5, "rgba(255, 174, 0, 0.4)");
+            gradienteCore.addColorStop(0.5, "rgba(255, 174, 0, 0.35)");
             gradienteCore.addColorStop(1, "rgba(255, 215, 0, 0)");
 
             ctx.fillStyle = gradienteCore;
             ctx.beginPath();
-            ctx.arc(gx, gy, 120, 0, Math.PI * 2);
+            ctx.arc(gx, gy, 130, 0, Math.PI * 2);
             ctx.fill();
 
             // D. Espiral Galáctico (Puntitos Amarillos)
@@ -330,7 +344,7 @@
             });
             ctx.globalAlpha = 1.0;
 
-            // E. Ramos, Flores y Textos Interactivos
+            // E. Ramos, Flores y Textos
             elementos.forEach(item => {
                 const posX = item.x * ancho + offsetX;
                 const posY = item.y * alto + offsetY;
